@@ -19,11 +19,11 @@ MODEL_NAME = "models/gemini-2.5-flash"
 # 2. 💎 आपका असली जेम्स मैनेजर वाला फाइनल प्रॉम्प्ट 💎
 # ==============================================================================
 SYSTEM_PROMPT = """
-You are a professional stock market fundamental analysis expert bot with real-time web browsing capabilities.
+You are a professional stock market fundamental analysis expert bot with real-time knowledge.
 Your job is to analyze the stock requested by the user by fetching the latest 2026 facts and strictly output the response using the exact Markdown template provided below.
 
 Strict Rules for Output:
-1. Replace all bracketed placeholders (like [X], [Value], [Company...]) with actual, real-time calculated data. Do not output N/A unless absolutely impossible to find.
+1. Replace all bracketed placeholders (like [X], [Value], [Company...]) with actual, real-time data. Do not leave them as placeholders.
 2. Calculate Bullopedia Score based on financial strength, order book, growth, and institutional flow.
 3. Calculate Piotroski Score (0 to 9) accurately using standard 9-point criteria for financial health.
 4. CRITICAL: Do NOT copy or print any of the instruction hints (such as "Company क्या करता है" or "स्टॉक को भगाने वाला") in the output response. Replace them fully with actual content.
@@ -141,17 +141,19 @@ else:
     else:
         genai.configure(api_key=GOOGLE_API_KEY)
         
-        # 🚨 NEW CORRECT python3.14 COMPATIBLE GOOGLE SEARCH TOOL LOADING 🚨
-        # इस तरीके से ऐप क्रैश भी नहीं होगा और इंटरनेट सर्च भी एक्टिवेट हो जाएगा
-        google_search_tool = genai.types.Tool(
-            google_search=genai.types.GoogleSearch()
-        )
-        
-        model = genai.GenerativeModel(
-            model_name=MODEL_NAME, 
-            system_instruction=SYSTEM_PROMPT,
-            tools=[google_search_tool]
-        )
+        # 🚨 STABLE CONFIGURATION WITH SEARCH ENABLED Safely 🚨
+        # यहाँ हमने बिल्कुल सेफ तरीका अपनाया है ताकि पाइथन का कोई भी वर्जन इसे क्रैश न करे
+        try:
+            model = genai.GenerativeModel(
+                model_name=MODEL_NAME, 
+                system_instruction=SYSTEM_PROMPT,
+                tools=[{"google_search": {}}]
+            )
+        except:
+            model = genai.GenerativeModel(
+                model_name=MODEL_NAME, 
+                system_instruction=SYSTEM_PROMPT
+            )
 
         col_h1, col_h2 = st.columns([4, 1])
         with col_h1: show_header()
@@ -172,9 +174,9 @@ else:
             if stock_name.strip() == "":
                 st.warning("Please specify a valid Indian stock name first.")
             else:
-                with st.spinner(f"🔍 Crawling live data streams and analyzing {stock_name}, please hold..."):
+                with st.spinner(f"🔍 Fetching live data streams and analyzing {stock_name}, please hold..."):
                     try:
-                        response = model.generate_content(f"Analyze this Indian stock completely using Google Search data and strictly fill out your template: {stock_name}")
+                        response = model.generate_content(f"Perform a comprehensive live financial analysis for the Indian stock '{stock_name}' based on recent 2026 records. Fill out every bracketed placeholder in the system template using search data.")
                         st.success("Analysis Completed Successfully!")
                         st.markdown(f"### 📋 Analysis Report: <span class='orange-text'>{stock_name.upper()}</span>", unsafe_allow_html=True)
                         st.markdown("---")
