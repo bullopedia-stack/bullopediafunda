@@ -3,7 +3,7 @@ import google.generativeai as genai
 import os
 
 # ==============================================================================
-# 🚨 SECURE API KEY LOADING
+# 1. SECURE API KEY LOADING (तिजोरी से चाबी उठाना)
 # ==============================================================================
 if "GOOGLE_API_KEY" in st.secrets:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
@@ -16,20 +16,20 @@ YOUR_BRAND_NAME = "BULLOPEDIA"
 MODEL_NAME = "models/gemini-2.5-flash"
 
 # ==============================================================================
-# 2. 💎 GEMS MANAGER EXACT COMPATIBLE PROMPT (With strict grounding rules)
+# 2. 💎 आपका असली जेम्स मैनेजर वाला फाइनल प्रॉम्प्ट 💎
 # ==============================================================================
 SYSTEM_PROMPT = """
-You are a professional stock market fundamental analysis expert bot with real-time web browsing capabilities, exactly like the Gemini Gems Manager system.
+You are a professional stock market fundamental analysis expert bot. Your job is to analyze the stock requested by the user and strictly output the response using the exact Markdown template provided below.
 
-CRITICAL INSTRUCTIONS FOR LIVE DATA (GROUNDING):
-1. You MUST use the Google Search tool to find the most recent, real-time live data for the requested Indian stock for the current year 2026. Do NOT use your internal pre-trained knowledge for numbers.
-2. Search for: "[Stock Name] share price", "[Stock Name] market cap, PE ratio, debt to equity, promoter holding", "[Stock Name] latest quarterly results 2026", "[Stock Name] order book", and "[Stock Name] FII DII holding".
-3. Extract the exact numbers from the search results and strictly replace all bracketed placeholders like [X], [Value], [Company...] with these real statistics.
-4. Calculate the Bullopedia Score (out of 10) and Piotroski Score (0 to 9) dynamically based strictly on the fetched 2026 financial strength.
-5. Do NOT print the instruction hints (like "Company क्या करता है" or "स्टॉक को भगाने वाला") in the final response. Replace them fully with actual factual descriptions in English.
-6. Absolute Rule: Do not include any hyperlinks, URL sources, markdown links, or website names in the output. Keep it 100% clean.
+Strict Rules for Output:
+1. Replace all bracketed placeholders (like [X], [Value], [Company...]) with actual, calculated data.
+2. Calculate Bullopedia Score based on financial strength, order book, growth, and institutional flow.
+3. Calculate Piotroski Score (0 to 9) accurately using standard 9-point criteria for financial health.
+4. CRITICAL: Do NOT copy or print any of the instruction hints (such as "Company क्या करता है" or "स्टॉक को भगाने वाला") in the output response. Replace them fully with actual content.
+5. Do not include any hyperlinks, URL sources, or website names in the output. Keep it 100% clean.
+6. Keep the exact emojis and bold layout as requested.
 
-You MUST output the response using the exact Markdown template below:
+Here is the template you must use for the output:
 
 # **🐂 [STOCK NAME]**
 ## * ➡️ **Bullopedia Score:** 🔥 **[X.X]/10**
@@ -38,14 +38,14 @@ You MUST output the response using the exact Markdown template below:
 ---
 
 🚀 **1. BUSINESS OVERVIEW:**
-> **Company Profile:** [Company profile and core revenue sources based on latest search data - max 2 lines]
+> **Company Profile:** [Company profile and core revenue sources - max 2 lines]
 
 📊 **2. MARKET CAP CATEGORY:**
 * ➡️ **Category:** 💎 **[Large / Mid / Small Cap]** * ➡️ **Market Cap:** 💰 **₹ [X] Cr**
 
 💼 **3. ORDER BOOK & KEY TRIGGERS:**
 * ➡️ **Total Order Book:** 📦 **₹ [X] Crore** (Write N/A if not applicable)
-* ➡️ **Recent Wins / Catalyst:** ⚡ **[Major recent orders or core growth triggers fetched from news]**
+* ➡️ **Recent Wins / Catalyst:** ⚡ **[Major recent orders or key triggers]**
 
 📈 **4. KEY METRICS & FINANCIAL HEALTH:**
 * ➡️ **Current Price:** 💵 **₹ [X]** * ➡️ **P/E Ratio:** 🔍 **[X]** (Industry P/E: **[Y]**)
@@ -58,7 +58,7 @@ You MUST output the response using the exact Markdown template below:
 
 📦 **6. VOLUME & DELIVERY TREND:**
 * ➡️ **Delivery Percentage:** 📊 **Last Day: [X]% | 1-W Avg: [X]% | 1-M Avg: [X]%**
-* ➡️ **Volume & Price Action:** 📈 **[Vol Trend] • [Price Tightness / Breakout Status]**
+* ➡️ **Volume & Price Action:** 📈 **[Vol Trend] • [Price Action]**
 * ➡️ **Overall Trend:** 🎯 **[Strong Accumulation 🔥 / Neutral / Strong Distribution 🔴]** (1 short reason)
 
 🎯 **7. SECTOR PLAY & ROTATION:**
@@ -67,7 +67,7 @@ You MUST output the response using the exact Markdown template below:
 
 📉 **8. SECTOR TECHNICAL INDICATORS (RSI):**
 * ➡️ **Sector RSI:** 📊 **Monthly: [Value] | Daily: [Value]**
-* ➡️ **🚨 MOMENTUM ALERT:** **[If Monthly RSI crossed 60 from below? FLASH: "🔥 Sector entering Super-Bullish zone!" Else "None"]**
+* ➡️ **🚨 MOMENTUM ALERT:** **[If Monthly RSI crosses 60 from below? FLASH: "🔥 Sector entering Super-Bullish zone!" Else "None"]**
 
 🦅 **9. BULLOPEDIA TAKEAWAY:**
 * 🟢 **Pros / Triggers:** **[1-2 strongest points/triggers]**
@@ -82,19 +82,40 @@ st.set_page_config(page_title=YOUR_BRAND_NAME, page_icon="📈", layout="centere
 
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] { background-color: #0d0d0d; color: #ffffff; }
-.orange-text { color: #ff7700; font-weight: bold; }
+[data-testid="stAppViewContainer"] {
+    background-color: #0d0d0d;
+    color: #ffffff;
+}
+.orange-text {
+    color: #ff7700;
+    font-weight: bold;
+}
 #MainMenu, header, footer {visibility: hidden;}
 div.stButton > button:first-child {
-    background-color: #ff7700; color: #ffffff; font-size: 1.1rem; font-weight: bold;
-    border-radius: 8px; border: none; padding: 12px 24px; width: 100%;
+    background-color: #ff7700;
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    border: none;
+    padding: 12px 24px;
+    width: 100%;
 }
-div.stButton > button:first-child:hover { background-color: #e06600; }
+div.stButton > button:first-child:hover {
+    background-color: #e06600;
+}
 div.markdown-container-markdownContainer {
-    background-color: #161616; padding: 25px; border-radius: 12px; border: 1px solid #262626;
+    background-color: #161616;
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid #262626;
 }
-p, h1, h2, h3, li, blockquote, span { color: #ffffff !important; }
-div.markdown-container-markdownContainer h1, div.markdown-container-markdownContainer strong { color: #ff7700 !important; }
+p, h1, h2, h3, li, blockquote, span {
+    color: #ffffff !important;
+}
+div.markdown-container-markdownContainer h1, div.markdown-container-markdownContainer strong {
+    color: #ff7700 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -104,7 +125,8 @@ div.markdown-container-markdownContainer h1, div.markdown-container-markdownCont
 def show_header():
     col1, col2 = st.columns([1, 4])
     with col1:
-        if os.path.exists("logo.png"): st.image("logo.png", width=90)
+        if os.path.exists("logo.png"):
+            st.image("logo.png", width=90)
     with col2:
         st.markdown(f"<h1 style='color: #ff7700; margin-top: 5px; font-size: 2.8rem;'>{YOUR_BRAND_NAME}</h1>", unsafe_allow_html=True)
 
@@ -126,7 +148,7 @@ if not st.session_state.logged_in:
     login_button = st.button("Access Portal")
     
     if login_button:
-        if password_input in VALID_PASSWORDS:
+        if password_input.strip().upper() in VALID_PASSWORDS:
             st.session_state.logged_in = True
             st.rerun()
         else:
@@ -137,15 +159,12 @@ else:
     else:
         genai.configure(api_key=GOOGLE_API_KEY)
         
-        # 🚨 ADVANCED GROUNDING WITH SEARCH ENABLED 🚨
-        model = genai.GenerativeModel(
-            model_name=MODEL_NAME, 
-            system_instruction=SYSTEM_PROMPT,
-            tools=[{"google_search": {}}]  # This triggers live Google Search filtering
-        )
+        # 🚨 STABLE INITIALIZATION WITHOUT CRASHING TOOLS 🚨
+        model = genai.GenerativeModel(model_name=MODEL_NAME, system_instruction=SYSTEM_PROMPT)
 
         col_h1, col_h2 = st.columns([4, 1])
-        with col_h1: show_header()
+        with col_h1:
+            show_header()
                 
         with col_h2:
             st.write("")
@@ -163,12 +182,9 @@ else:
             if stock_name.strip() == "":
                 st.warning("Please specify a valid Indian stock name first.")
             else:
-                with st.spinner(f"🔍 Crawling live data streams and analyzing {stock_name}, please hold..."):
+                with st.spinner(f"🔍 Analyzing {stock_name}, please hold..."):
                     try:
-                        # Force the model to strict template completion
-                        user_message = f"Fetch the latest 2026 real-time data for '{stock_name}' from Google Search. Completely fill out every bracketed placeholder in the template structure. Do not output any instructions."
-                        response = model.generate_content(user_message)
-                        
+                        response = model.generate_content(f"Analyze this Indian stock completely and strictly format using your template rules: {stock_name}")
                         st.success("Analysis Completed Successfully!")
                         st.markdown(f"### 📋 Analysis Report: <span class='orange-text'>{stock_name.upper()}</span>", unsafe_allow_html=True)
                         st.markdown("---")
