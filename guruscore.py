@@ -20,7 +20,7 @@ else:
 VALID_PASSWORDS = ["STUDENT2026", "BULLGURU", "VIPACCESS"]
 
 # Paste your Google AI Studio API Key here ⬇️
-GOOGLE_API_KEY = "AIzaSyA4s0e8tADElCt7z_ZcLG79xCkLxovGHFk"  # <-- Paste Key Here
+GOOGLE_API_KEY = "AIzaSyBWxIFi4QSJyKrSh5-I78PyORIgdZj17ng"  # <-- Paste Key Here
 
 # Latest 2026 Gemini Model
 MODEL_NAME = "models/gemini-2.5-flash"
