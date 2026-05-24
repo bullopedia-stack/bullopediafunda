@@ -19,10 +19,11 @@ MODEL_NAME = "models/gemini-2.5-flash"
 # 2. 💎 आपका असली जेम्स मैनेजर वाला फाइनल प्रॉम्प्ट 💎
 # ==============================================================================
 SYSTEM_PROMPT = """
-You are a professional stock market fundamental analysis expert bot. Your job is to analyze the stock requested by the user and strictly output the response using the exact Markdown template provided below.
+You are a professional stock market fundamental analysis expert bot with real-time web browsing capabilities.
+Your job is to analyze the stock requested by the user by fetching the latest 2026 facts and strictly output the response using the exact Markdown template provided below.
 
 Strict Rules for Output:
-1. Replace all bracketed placeholders (like [X], [Value], [Company...]) with actual, calculated data.
+1. Replace all bracketed placeholders (like [X], [Value], [Company...]) with actual, real-time calculated data. Do not output N/A unless absolutely impossible to find.
 2. Calculate Bullopedia Score based on financial strength, order book, growth, and institutional flow.
 3. Calculate Piotroski Score (0 to 9) accurately using standard 9-point criteria for financial health.
 4. CRITICAL: Do NOT copy or print any of the instruction hints (such as "Company क्या करता है" or "स्टॉक को भगाने वाला") in the output response. Replace them fully with actual content.
@@ -41,15 +42,18 @@ Here is the template you must use for the output:
 > **Company Profile:** [Company profile and core revenue sources - max 2 lines]
 
 📊 **2. MARKET CAP CATEGORY:**
-* ➡️ **Category:** 💎 **[Large / Mid / Small Cap]** * ➡️ **Market Cap:** 💰 **₹ [X] Cr**
+* ➡️ **Category:** 💎 **[Large / Mid / Small Cap]**
+* ➡️ **Market Cap:** 💰 **₹ [X] Cr**
 
 💼 **3. ORDER BOOK & KEY TRIGGERS:**
 * ➡️ **Total Order Book:** 📦 **₹ [X] Crore** (Write N/A if not applicable)
 * ➡️ **Recent Wins / Catalyst:** ⚡ **[Major recent orders or key triggers]**
 
 📈 **4. KEY METRICS & FINANCIAL HEALTH:**
-* ➡️ **Current Price:** 💵 **₹ [X]** * ➡️ **P/E Ratio:** 🔍 **[X]** (Industry P/E: **[Y]**)
-* ➡️ **Debt to Equity:** ⚖️ **[X]** * ➡️ **Promoter Holding:** 🤝 **[X]%** (Pledged: **[Y]%**)
+* ➡️ **Current Price:** 💵 **₹ [X]**
+* ➡️ **P/E Ratio:** 🔍 **[X]** (Industry P/E: **[Y]**)
+* ➡️ **Debt to Equity:** ⚖️ **[X]**
+* ➡️ **Promoter Holding:** 🤝 **[X]%** (Pledged: **[Y]%**)
 * ➡️ **3-Yr Growth Trend:** 🩺 **Sales CAGR: [X]% | PAT CAGR: [Y]%**
 
 🏦 **5. INSTITUTIONAL FLOW (FII + DII):**
@@ -82,40 +86,19 @@ st.set_page_config(page_title=YOUR_BRAND_NAME, page_icon="📈", layout="centere
 
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] {
-    background-color: #0d0d0d;
-    color: #ffffff;
-}
-.orange-text {
-    color: #ff7700;
-    font-weight: bold;
-}
+[data-testid="stAppViewContainer"] { background-color: #0d0d0d; color: #ffffff; }
+.orange-text { color: #ff7700; font-weight: bold; }
 #MainMenu, header, footer {visibility: hidden;}
 div.stButton > button:first-child {
-    background-color: #ff7700;
-    color: #ffffff;
-    font-size: 1.1rem;
-    font-weight: bold;
-    border-radius: 8px;
-    border: none;
-    padding: 12px 24px;
-    width: 100%;
+    background-color: #ff7700; color: #ffffff; font-size: 1.1rem; font-weight: bold;
+    border-radius: 8px; border: none; padding: 12px 24px; width: 100%;
 }
-div.stButton > button:first-child:hover {
-    background-color: #e06600;
-}
+div.stButton > button:first-child:hover { background-color: #e06600; }
 div.markdown-container-markdownContainer {
-    background-color: #161616;
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid #262626;
+    background-color: #161616; padding: 25px; border-radius: 12px; border: 1px solid #262626;
 }
-p, h1, h2, h3, li, blockquote, span {
-    color: #ffffff !important;
-}
-div.markdown-container-markdownContainer h1, div.markdown-container-markdownContainer strong {
-    color: #ff7700 !important;
-}
+p, h1, h2, h3, li, blockquote, span { color: #ffffff !important; }
+div.markdown-container-markdownContainer h1, div.markdown-container-markdownContainer strong { color: #ff7700 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -125,8 +108,7 @@ div.markdown-container-markdownContainer h1, div.markdown-container-markdownCont
 def show_header():
     col1, col2 = st.columns([1, 4])
     with col1:
-        if os.path.exists("logo.png"):
-            st.image("logo.png", width=90)
+        if os.path.exists("logo.png"): st.image("logo.png", width=90)
     with col2:
         st.markdown(f"<h1 style='color: #ff7700; margin-top: 5px; font-size: 2.8rem;'>{YOUR_BRAND_NAME}</h1>", unsafe_allow_html=True)
 
@@ -159,12 +141,20 @@ else:
     else:
         genai.configure(api_key=GOOGLE_API_KEY)
         
-        # 🚨 STABLE INITIALIZATION WITHOUT CRASHING TOOLS 🚨
-        model = genai.GenerativeModel(model_name=MODEL_NAME, system_instruction=SYSTEM_PROMPT)
+        # 🚨 NEW CORRECT python3.14 COMPATIBLE GOOGLE SEARCH TOOL LOADING 🚨
+        # इस तरीके से ऐप क्रैश भी नहीं होगा और इंटरनेट सर्च भी एक्टिवेट हो जाएगा
+        google_search_tool = genai.types.Tool(
+            google_search=genai.types.GoogleSearch()
+        )
+        
+        model = genai.GenerativeModel(
+            model_name=MODEL_NAME, 
+            system_instruction=SYSTEM_PROMPT,
+            tools=[google_search_tool]
+        )
 
         col_h1, col_h2 = st.columns([4, 1])
-        with col_h1:
-            show_header()
+        with col_h1: show_header()
                 
         with col_h2:
             st.write("")
@@ -182,9 +172,9 @@ else:
             if stock_name.strip() == "":
                 st.warning("Please specify a valid Indian stock name first.")
             else:
-                with st.spinner(f"🔍 Analyzing {stock_name}, please hold..."):
+                with st.spinner(f"🔍 Crawling live data streams and analyzing {stock_name}, please hold..."):
                     try:
-                        response = model.generate_content(f"Analyze this Indian stock completely and strictly format using your template rules: {stock_name}")
+                        response = model.generate_content(f"Analyze this Indian stock completely using Google Search data and strictly fill out your template: {stock_name}")
                         st.success("Analysis Completed Successfully!")
                         st.markdown(f"### 📋 Analysis Report: <span class='orange-text'>{stock_name.upper()}</span>", unsafe_allow_html=True)
                         st.markdown("---")
